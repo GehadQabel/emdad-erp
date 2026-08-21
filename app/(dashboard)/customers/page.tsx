@@ -6,12 +6,11 @@ import { useI18n } from '@/lib/i18n/context'
 import { formatCurrency } from '@/lib/utils'
 import { createCustomerAction, unblockCustomerAction } from '@/lib/actions/customers.actions'
 import { 
-  Users, Plus, Search, RefreshCw, MapPin, 
-  ShieldAlert, ShieldCheck, Unlock, Phone, Clock, AlertTriangle, Filter, XCircle, Lock
+  Users, Plus, Search, RefreshCw, Phone, Clock, AlertTriangle, Filter, Lock, Unlock, ShieldAlert, ShieldCheck
 } from 'lucide-react'
 
 export default function CustomersPage() {
-  const { t, locale } = useI18n()
+  const { locale } = useI18n()
   const supabase = createClient()
 
   const [customers, setCustomers] = useState<any[]>([])
@@ -43,19 +42,23 @@ export default function CustomersPage() {
 
   async function loadData() {
     setLoading(true)
+    try {
+      // 1. Fetch User Context
+      const { data: userCtx } = await (supabase as any).rpc('rpc_get_my_profile_and_role')
+      if (userCtx) {
+        setCurrentUserRole((userCtx as any).role_code || 'SALES')
+      }
 
-    // 1. Fetch User Context
-    const { data: userCtx } = await (supabase as any).rpc('rpc_get_my_profile_and_role')
-    if (userCtx) {
-      setCurrentUserRole((userCtx as any).role_code)
+      // 2. Fetch Customers Overview
+      const { data } = await (supabase as any).rpc('rpc_get_customers_overview', {
+        p_search: search.trim() || null,
+      })
+
+      setCustomers(data || [])
+    } catch (err) {
+      console.error('Error loading customers:', err)
+      setCustomers([])
     }
-
-    // 2. Fetch Customers Overview
-    const { data } = await (supabase as any).rpc('rpc_get_customers_overview', {
-      p_search: search.trim() || null,
-    })
-
-    setCustomers(data || [])
     setLoading(false)
   }
 
@@ -92,8 +95,9 @@ export default function CustomersPage() {
     setActionLoading(false)
   }
 
-  const filteredCustomers = customers.filter((c) => {
-    const isBlocked = c.payment_health_status === 'OVERDUE_BLOCKED' || c.is_blocked
+  const filteredCustomers = (customers || []).filter((c) => {
+    if (!c) return false
+    const isBlocked = c.payment_health_status === 'OVERDUE_BLOCKED' || Boolean(c.is_blocked)
     const isDueSoon = c.payment_health_status === 'DUE_SOON'
     const isHealthy = !isBlocked && !isDueSoon
 
@@ -191,43 +195,48 @@ export default function CustomersPage() {
                 <tr><td colSpan={7} className="py-8 text-center text-slate-500">{locale === 'ar' ? 'لا يوجد عملاء مطابقين للفلتر.' : 'No customers matching filter.'}</td></tr>
               ) : (
                 filteredCustomers.map((c) => {
-                  const isBlocked = c.payment_health_status === 'OVERDUE_BLOCKED' || c.is_blocked
-                  const isDueSoon = c.payment_health_status === 'DUE_SOON'
+                  const isBlocked = c?.payment_health_status === 'OVERDUE_BLOCKED' || Boolean(c?.is_blocked)
+                  const isDueSoon = c?.payment_health_status === 'DUE_SOON'
+                  const totalOutstanding = Number(c?.total_outstanding || 0)
+                  const overdueDays = Number(c?.overdue_days || 0)
+                  const daysDiff = Number(c?.days_diff || 0)
+                  const totalDue = Number(c?.total_due_with_late_fee || c?.total_outstanding || 0)
+                  const lateFee = Number(c?.late_fee_amount || 0)
 
                   return (
-                    <tr key={c.id} className={`transition-colors ${isBlocked ? 'bg-rose-950/20 hover:bg-rose-950/30' : isDueSoon ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-slate-800/25'}`}>
+                    <tr key={c.id || c.code} className={`transition-colors ${isBlocked ? 'bg-rose-950/20 hover:bg-rose-950/30' : isDueSoon ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-slate-800/25'}`}>
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-bold text-white block text-sm">{c.name}</span>
-                        <span className="font-mono text-sky-400 text-[10px]">{c.code}</span>
+                        <span className="font-bold text-white block text-sm">{c.name || '—'}</span>
+                        <span className="font-mono text-sky-400 text-[10px]">{c.code || '—'}</span>
                       </td>
 
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <p className="font-semibold text-slate-200">{c.contact_person || '—'}</p>
-                        <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {c.phone}</p>
+                        <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3" /> {c.phone || '—'}</p>
                       </td>
 
                       <td className="py-3.5 px-4 text-center font-mono text-slate-300 whitespace-nowrap">
-                        {c.payment_terms_days} {locale === 'ar' ? 'يوم' : 'days'}
+                        {c.payment_terms_days || 30} {locale === 'ar' ? 'يوم' : 'days'}
                       </td>
 
                       {/* العداد التنازلي */}
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {c.total_outstanding <= 0 ? (
+                        {totalOutstanding <= 0 ? (
                           <span className="text-slate-500 font-medium">{locale === 'ar' ? 'لا توجد ديون' : 'No Debt'}</span>
                         ) : isBlocked ? (
                           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold font-mono">
                             <Clock className="w-3 h-3" />
-                            <span>{locale === 'ar' ? `متأخر ${c.overdue_days} يوم` : `${c.overdue_days}d Overdue`}</span>
+                            <span>{locale === 'ar' ? `متأخر ${overdueDays} يوم` : `${overdueDays}d Overdue`}</span>
                           </div>
                         ) : isDueSoon ? (
                           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold font-mono animate-pulse">
                             <AlertTriangle className="w-3 h-3" />
-                            <span>{locale === 'ar' ? `متبقي ${c.days_diff} أيام` : `${c.days_diff}d left`}</span>
+                            <span>{locale === 'ar' ? `متبقي ${daysDiff} أيام` : `${daysDiff}d left`}</span>
                           </div>
                         ) : (
                           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold font-mono">
                             <Clock className="w-3 h-3" />
-                            <span>{locale === 'ar' ? `متبقي ${c.days_diff} يوم` : `${c.days_diff}d left`}</span>
+                            <span>{locale === 'ar' ? `متبقي ${daysDiff} يوم` : `${daysDiff}d left`}</span>
                           </div>
                         )}
                       </td>
@@ -235,11 +244,11 @@ export default function CustomersPage() {
                       {/* المديونية وغرامة التأخير */}
                       <td className="py-3.5 px-4 text-right rtl:text-left font-mono whitespace-nowrap">
                         <span className="text-sm font-bold text-white block">
-                          {formatCurrency(c.total_due_with_late_fee, locale)}
+                          {formatCurrency(totalDue, locale)}
                         </span>
-                        {c.late_fee_amount > 0 && (
+                        {lateFee > 0 && (
                           <span className="text-[10px] text-rose-400 flex items-center justify-end rtl:justify-start gap-0.5 mt-0.5">
-                            +{formatCurrency(c.late_fee_amount, locale)}
+                            +{formatCurrency(lateFee, locale)}
                           </span>
                         )}
                       </td>
