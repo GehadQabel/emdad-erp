@@ -5,12 +5,12 @@ import { createClient } from '@/lib/supabase/client'
 import { useI18n } from '@/lib/i18n/context'
 import { updateSystemSettingAction, toggleUserStatusAction } from '@/lib/actions/governance.actions'
 import { 
-  Settings, Users, Shield, Save, RefreshCw, 
-  Percent, UserCheck, UserX, Sliders, ShieldAlert, CheckCircle2
+  Settings, Users, Save, RefreshCw, 
+  UserCheck, UserX, Sliders
 } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { t, locale } = useI18n()
+  const { locale } = useI18n()
   const supabase = createClient()
 
   const [activeTab, setActiveTab] = useState<'SETTINGS' | 'TEAM'>('SETTINGS')
@@ -51,17 +51,23 @@ export default function SettingsPage() {
 
   async function loadData() {
     setLoading(true)
-    const { data } = await supabase.rpc('rpc_get_settings_and_team')
-    if (data) {
-      const parsed = data as any
-      setSettings(parsed.settings || [])
-      setTeam(parsed.team || [])
+    try {
+      const { data } = await (supabase as any).rpc('rpc_get_settings_and_team')
+      if (data) {
+        const parsed = data as any
+        setSettings(parsed.settings || [])
+        setTeam(parsed.team || [])
 
-      const valMap: Record<string, string> = {}
-      parsed.settings?.forEach((s: any) => {
-        valMap[s.key] = s.value
-      })
-      setSettingValues(valMap)
+        const valMap: Record<string, string> = {}
+        parsed.settings?.forEach((s: any) => {
+          valMap[s.key] = s.value
+        })
+        setSettingValues(valMap)
+      }
+    } catch (err) {
+      console.error('Error loading settings:', err)
+      setSettings([])
+      setTeam([])
     }
     setLoading(false)
   }
@@ -146,20 +152,20 @@ export default function SettingsPage() {
       {activeTab === 'SETTINGS' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {settings.map((s) => {
-            const meta = settingLabels[s.key] || {
-              arTitle: s.key,
-              enTitle: s.key,
-              arDesc: s.description || '',
-              enDesc: s.description || '',
+            const meta = settingLabels[s?.key] || {
+              arTitle: s?.key || 'Setting',
+              enTitle: s?.key || 'Setting',
+              arDesc: s?.description || '',
+              enDesc: s?.description || '',
             }
 
             return (
-              <div key={s.key} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3 relative overflow-hidden">
+              <div key={s?.key} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3 relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
                     {locale === 'ar' ? meta.arTitle : meta.enTitle}
                   </span>
-                  <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono">{s.type}</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono">{s?.type || 'STRING'}</span>
                 </div>
 
                 <p className="text-xs text-slate-300 leading-relaxed min-h-[36px]">
@@ -167,7 +173,7 @@ export default function SettingsPage() {
                 </p>
 
                 <div className="flex gap-2 pt-2 border-t border-slate-800/60">
-                  {s.type === 'BOOLEAN' ? (
+                  {s?.type === 'BOOLEAN' ? (
                     <select
                       value={settingValues[s.key] || 'true'}
                       onChange={(e) => setSettingValues({ ...settingValues, [s.key]: e.target.value })}
@@ -179,7 +185,7 @@ export default function SettingsPage() {
                     </select>
                   ) : (
                     <input
-                      type={s.type === 'INTEGER' || s.type === 'DECIMAL' ? 'number' : 'text'}
+                      type={s?.type === 'INTEGER' || s?.type === 'DECIMAL' ? 'number' : 'text'}
                       step="0.5"
                       value={settingValues[s.key] || ''}
                       onChange={(e) => setSettingValues({ ...settingValues, [s.key]: e.target.value })}
@@ -188,12 +194,12 @@ export default function SettingsPage() {
                   )}
 
                   <button
-                    disabled={savingKey === s.key}
+                    disabled={savingKey === s?.key}
                     onClick={() => handleSaveSetting(s.key)}
                     className="px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    <span>{savingKey === s.key ? 'جاري الحفظ...' : (locale === 'ar' ? 'حفظ' : 'Save')}</span>
+                    <span>{savingKey === s?.key ? 'جاري الحفظ...' : (locale === 'ar' ? 'حفظ' : 'Save')}</span>
                   </button>
                 </div>
               </div>
@@ -217,18 +223,18 @@ export default function SettingsPage() {
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {team.map((u) => (
-                <tr key={u.id} className={`transition-colors ${!u.is_active ? 'bg-rose-950/15' : 'hover:bg-slate-800/25'}`}>
-                  <td className="py-3.5 px-4 font-bold text-white">{u.full_name}</td>
-                  <td className="py-3.5 px-4 font-mono text-sky-400">{u.email}</td>
+                <tr key={u?.id} className={`transition-colors ${!u?.is_active ? 'bg-rose-950/15' : 'hover:bg-slate-800/25'}`}>
+                  <td className="py-3.5 px-4 font-bold text-white">{u?.full_name || '—'}</td>
+                  <td className="py-3.5 px-4 font-mono text-sky-400">{u?.email || '—'}</td>
                   <td className="py-3.5 px-4 text-center">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${roleColors[u.role_code] || 'bg-slate-800 text-slate-300'}`}>
-                      {u.role_name || u.role_code}
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${roleColors[u?.role_code] || 'bg-slate-800 text-slate-300'}`}>
+                      {u?.role_name || u?.role_code || 'USER'}
                     </span>
                   </td>
 
                   {/* حالة الحساب */}
                   <td className="py-3.5 px-4 text-center">
-                    {u.is_active ? (
+                    {u?.is_active ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         <UserCheck className="w-3 h-3" /> {locale === 'ar' ? 'نشط ومصرح له' : 'Active'}
                       </span>
@@ -241,8 +247,8 @@ export default function SettingsPage() {
 
                   {/* زر التعطيل / التنشيط للأدمن */}
                   <td className="py-3.5 px-4 text-right rtl:text-left">
-                    {u.role_code !== 'ADMIN' ? (
-                      u.is_active ? (
+                    {u?.role_code !== 'ADMIN' ? (
+                      u?.is_active ? (
                         <button
                           disabled={togglingUserId === u.id}
                           onClick={() => handleToggleUser(u)}

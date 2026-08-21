@@ -3,18 +3,24 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useI18n } from '@/lib/i18n/context'
-import { PackageCheck, RefreshCw, Warehouse, Calendar, CheckCircle2 } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
+import { PackageCheck, RefreshCw, CheckCircle2 } from 'lucide-react'
 
 export default function GoodsReceiptsPage() {
-  const { t, locale } = useI18n()
+  const { locale } = useI18n()
   const supabase = createClient()
   const [receipts, setReceipts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   async function loadReceipts() {
     setLoading(true)
-    const { data } = await supabase.rpc('rpc_get_goods_receipts')
-    setReceipts(data || [])
+    try {
+      const { data } = await (supabase as any).rpc('rpc_get_goods_receipts')
+      setReceipts(data || [])
+    } catch (err) {
+      console.error('Error loading receipts:', err)
+      setReceipts([])
+    }
     setLoading(false)
   }
 
@@ -59,13 +65,13 @@ export default function GoodsReceiptsPage() {
               <tr><td colSpan={7} className="py-8 text-center text-slate-500">{locale === 'ar' ? 'لا توجد أذون استلام مسجلة.' : 'No goods receipts recorded.'}</td></tr>
             ) : (
               receipts.map((gr) => (
-                <tr key={gr.id} className="hover:bg-slate-800/25 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">{gr.receipt_number}</td>
-                  <td className="py-3.5 px-4 font-mono text-sky-400">{gr.po_number}</td>
-                  <td className="py-3.5 px-4 font-semibold text-white">{gr.supplier_name}</td>
-                  <td className="py-3.5 px-4 text-slate-300">{gr.warehouse_name}</td>
-                  <td className="py-3.5 px-4 font-mono text-slate-400">{gr.supplier_delivery_note || '—'}</td>
-                  <td className="py-3.5 px-4 text-center text-slate-400">{new Date(gr.confirmed_at || gr.created_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}</td>
+                <tr key={gr?.id || gr?.receipt_number} className="hover:bg-slate-800/25 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">{gr?.receipt_number || '—'}</td>
+                  <td className="py-3.5 px-4 font-mono text-sky-400">{gr?.po_number || '—'}</td>
+                  <td className="py-3.5 px-4 font-semibold text-white">{gr?.supplier_name || '—'}</td>
+                  <td className="py-3.5 px-4 text-slate-300">{gr?.warehouse_name || '—'}</td>
+                  <td className="py-3.5 px-4 font-mono text-slate-400">{gr?.supplier_delivery_note || '—'}</td>
+                  <td className="py-3.5 px-4 text-center text-slate-400">{formatDate(gr?.confirmed_at || gr?.created_at)}</td>
                   <td className="py-3.5 px-4 text-center">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       <CheckCircle2 className="w-3 h-3" /> {locale === 'ar' ? 'مؤكد ومضاف للمخزون' : 'Confirmed & Stocked'}

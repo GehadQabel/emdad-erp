@@ -3,15 +3,15 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useI18n } from '@/lib/i18n/context'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
 import { createPurchaseOrderAction } from '@/lib/actions/purchasing.actions'
 import { 
-  Truck, Plus, Search, Filter, RefreshCw, 
-  Building2, Warehouse, Calendar, Coins, PackageCheck, AlertCircle, Trash2, XCircle
+  Truck, Plus, Search, RefreshCw, 
+  Coins, Trash2, XCircle
 } from 'lucide-react'
 
 export default function PurchaseOrdersPage() {
-  const { t, locale } = useI18n()
+  const { locale } = useI18n()
   const supabase = createClient()
 
   const [orders, setOrders] = useState<any[]>([])
@@ -36,25 +36,28 @@ export default function PurchaseOrdersPage() {
 
   async function loadData() {
     setLoading(true)
+    try {
+      // 1. Fetch Orders List
+      const { data: poData } = await (supabase as any).rpc('rpc_get_purchasing_orders', {
+        p_status: selectedStatus === 'ALL' ? null : selectedStatus,
+        p_search: search.trim() || null,
+      })
 
-    // 1. Fetch Orders List
-    const { data: poData } = await supabase.rpc('rpc_get_purchasing_orders', {
-      p_status: selectedStatus === 'ALL' ? null : selectedStatus,
-      p_search: search.trim() || null,
-    } as any)
+      // 2. Fetch Reference Data (Suppliers, Warehouses, Products)
+      const { data: refData } = await (supabase as any).rpc('rpc_get_purchasing_form_data')
 
-    // 2. Fetch Reference Data (Suppliers, Warehouses, Products)
-    const { data: refData } = await supabase.rpc('rpc_get_purchasing_form_data')
+      setOrders(poData || [])
+      if (refData) {
+        const parsed = refData as any
+        setFormDataRef(parsed)
 
-    setOrders(poData || [])
-    if (refData) {
-      const parsed = refData as any
-      setFormDataRef(parsed)
-
-      if (parsed.suppliers?.[0] && !supplierId) setSupplierId(parsed.suppliers[0].id)
-      if (parsed.warehouses?.[0] && !warehouseId) setWarehouseId(parsed.warehouses[0].id)
+        if (parsed.suppliers?.[0] && !supplierId) setSupplierId(parsed.suppliers[0].id)
+        if (parsed.warehouses?.[0] && !warehouseId) setWarehouseId(parsed.warehouses[0].id)
+      }
+    } catch (err) {
+      console.error('Error loading POs:', err)
+      setOrders([])
     }
-
     setLoading(false)
   }
 
@@ -71,7 +74,6 @@ export default function PurchaseOrdersPage() {
     setWarehouseId(defaultWhId)
     setExpectedDate(new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0])
 
-    // Add first item line default
     if (formDataRef.products?.[0]) {
       setPoItems([
         {
@@ -197,7 +199,8 @@ export default function PurchaseOrdersPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={locale === 'ar' ? 'البحث برقم أمر الشراء أو اسم المورد والمصنع...' : 'Search by PO # or Supplier Name...'}
+            onKeyDown={(e) => e.key === 'Enter' && loadData()}
+            placeholder={locale === 'ar' ? 'البحث برقم أمر الشراء أو اسم المورد والمصنع (اضغط Enter)...' : 'Search by PO # or Supplier Name...'}
             className="w-full bg-slate-900/80 border border-slate-800 focus:border-sky-500 rounded-xl px-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors"
           />
         </div>
@@ -243,27 +246,27 @@ export default function PurchaseOrdersPage() {
               </tr>
             ) : (
               orders.map((po) => (
-                <tr key={po.id} className="hover:bg-slate-800/25 transition-colors">
-                  <td className="py-3.5 px-4 font-mono font-bold text-sky-400">{po.po_number}</td>
-                  <td className="py-3.5 px-4 font-semibold text-white">{po.supplier_name}</td>
-                  <td className="py-3.5 px-4 text-slate-300">{po.warehouse_name}</td>
-                  <td className="py-3.5 px-4 text-center text-slate-400">{po.expected_delivery_date || '—'}</td>
+                <tr key={po?.id || po?.po_number} className="hover:bg-slate-800/25 transition-colors">
+                  <td className="py-3.5 px-4 font-mono font-bold text-sky-400">{po?.po_number || '—'}</td>
+                  <td className="py-3.5 px-4 font-semibold text-white">{po?.supplier_name || '—'}</td>
+                  <td className="py-3.5 px-4 text-slate-300">{po?.warehouse_name || '—'}</td>
+                  <td className="py-3.5 px-4 text-center text-slate-400">{formatDate(po?.expected_delivery_date)}</td>
                   <td className="py-3.5 px-4 text-right rtl:text-left font-bold text-white">
-                    {formatCurrency(po.total_amount, locale)}
+                    {formatCurrency(po?.total_amount, locale)}
                   </td>
                   <td className="py-3.5 px-4 text-center">
                     <span
                       className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                        po.received_status === 'RECEIVED'
+                        po?.received_status === 'RECEIVED'
                           ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : po.received_status === 'PARTIALLY_RECEIVED'
+                          : po?.received_status === 'PARTIALLY_RECEIVED'
                           ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                           : 'bg-slate-800 text-slate-400 border-slate-700'
                       }`}
                     >
-                      {po.received_status === 'RECEIVED'
+                      {po?.received_status === 'RECEIVED'
                         ? (locale === 'ar' ? 'تم الاستلام بالكامل' : 'Fully Received')
-                        : po.received_status === 'PARTIALLY_RECEIVED'
+                        : po?.received_status === 'PARTIALLY_RECEIVED'
                         ? (locale === 'ar' ? 'استلام جزئي' : 'Partially Received')
                         : (locale === 'ar' ? 'بانتظار وصول الشحنة' : 'Awaiting Delivery')}
                     </span>

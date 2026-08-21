@@ -19,15 +19,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   async function checkUserStatus() {
     setChecking(true)
-    const { data: userContext, error } = await supabase.rpc('rpc_get_my_profile_and_role')
+    try {
+      const { data: userContext, error } = await (supabase as any).rpc('rpc_get_my_profile_and_role')
 
-    if (userContext && !error) {
-      const parsed = userContext as any
-      if (parsed.is_active === false) {
-        setIsSuspended(true)
-      } else {
-        setIsSuspended(false)
+      if (userContext && !error) {
+        const parsed = userContext as any
+        if (parsed.is_active === false) {
+          setIsSuspended(true)
+        } else {
+          setIsSuspended(false)
+        }
       }
+    } catch (err) {
+      console.error('Error checking user status:', err)
     }
     setChecking(false)
   }

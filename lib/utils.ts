@@ -44,3 +44,20 @@ export function formatQuantity(qty: number | null | undefined): string {
     return Number(qty).toFixed(2)
   }
 }
+
+/**
+ * Formats date strings deterministically (YYYY-MM-DD) to prevent SSR hydration mismatches
+ */
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return String(dateStr).split('T')[0] || '—'
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  } catch (err) {
+    return '—'
+  }
+}

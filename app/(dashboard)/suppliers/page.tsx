@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import { useI18n } from '@/lib/i18n/context'
 import { createSupplierAction } from '@/lib/actions/suppliers.actions'
 import { 
-  Building2, Plus, Search, RefreshCw, Phone, Mail, FileText, CheckCircle2, XCircle
+  Building2, Plus, Search, RefreshCw, Phone, Mail, CheckCircle2, XCircle
 } from 'lucide-react'
 
 export default function SuppliersPage() {
-  const { t, locale } = useI18n()
+  const { locale } = useI18n()
   const supabase = createClient()
 
   const [suppliers, setSuppliers] = useState<any[]>([])
@@ -31,10 +31,15 @@ export default function SuppliersPage() {
 
   async function loadData() {
     setLoading(true)
-    const { data } = await supabase.rpc('rpc_get_suppliers_overview', {
-      p_search: search.trim() || null,
-    } as any)
-    setSuppliers(data || [])
+    try {
+      const { data } = await (supabase as any).rpc('rpc_get_suppliers_overview', {
+        p_search: search.trim() || null,
+      })
+      setSuppliers(data || [])
+    } catch (err) {
+      console.error('Error loading suppliers:', err)
+      setSuppliers([])
+    }
     setLoading(false)
   }
 
@@ -89,7 +94,7 @@ export default function SuppliersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && loadData()}
-          placeholder={locale === 'ar' ? 'البحث باسم المورد أو كود الشركة...' : 'Search by supplier name or code...'}
+          placeholder={locale === 'ar' ? 'البحث باسم المورد أو كود الشركة (اضغط Enter)...' : 'Search by supplier name or code...'}
           className="w-full bg-slate-900/80 border border-slate-800 focus:border-sky-500 rounded-xl px-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors"
         />
       </div>
@@ -113,17 +118,17 @@ export default function SuppliersPage() {
               <tr><td colSpan={5} className="py-8 text-center text-slate-500">{locale === 'ar' ? 'لا يوجد موردين مسجلين.' : 'No suppliers found.'}</td></tr>
             ) : (
               suppliers.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-800/25 transition-colors">
+                <tr key={s?.id || s?.code} className="hover:bg-slate-800/25 transition-colors">
                   <td className="py-3.5 px-4">
-                    <span className="font-bold text-white block text-sm">{s.name}</span>
-                    <span className="font-mono text-sky-400 text-[10px]">{s.code}</span>
+                    <span className="font-bold text-white block text-sm">{s?.name || '—'}</span>
+                    <span className="font-mono text-sky-400 text-[10px]">{s?.code || '—'}</span>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-300 font-semibold">{s.contact_person || '—'}</td>
+                  <td className="py-3.5 px-4 text-slate-300 font-semibold">{s?.contact_person || '—'}</td>
                   <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
-                    <p className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-500" /> {s.phone || '—'}</p>
-                    {s.email && <p className="flex items-center gap-1.5 mt-0.5 text-slate-500"><Mail className="w-3 h-3" /> {s.email}</p>}
+                    <p className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-500" /> {s?.phone || '—'}</p>
+                    {s?.email && <p className="flex items-center gap-1.5 mt-0.5 text-slate-500"><Mail className="w-3 h-3" /> {s?.email}</p>}
                   </td>
-                  <td className="py-3.5 px-4 font-mono text-slate-400">{s.tax_number || '—'}</td>
+                  <td className="py-3.5 px-4 font-mono text-slate-400">{s?.tax_number || '—'}</td>
                   <td className="py-3.5 px-4 text-center">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       <CheckCircle2 className="w-3 h-3" /> {locale === 'ar' ? 'معتمد ونشط' : 'Active'}

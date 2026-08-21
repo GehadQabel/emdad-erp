@@ -73,46 +73,50 @@ export default function ProductsPage() {
 
   async function loadData() {
     setLoading(true)
+    try {
+      // 1. Fetch Reference Data via Fast Single RPC
+      const { data: refData } = await (supabase as any).rpc('rpc_get_product_form_data')
+      
+      let catList: ReferenceItem[] = []
+      let brandList: ReferenceItem[] = []
+      let unitList: ReferenceItem[] = []
+      let whList: ReferenceItem[] = []
 
-    // 1. Fetch Reference Data via Fast Single RPC
-    const { data: refData } = await supabase.rpc('rpc_get_product_form_data')
-    
-    let catList: ReferenceItem[] = []
-    let brandList: ReferenceItem[] = []
-    let unitList: ReferenceItem[] = []
-    let whList: ReferenceItem[] = []
+      if (refData) {
+        const parsed = refData as any
+        catList = parsed.categories || []
+        brandList = parsed.brands || []
+        unitList = parsed.units || []
+        whList = parsed.warehouses || []
 
-    if (refData) {
-      const parsed = refData as any
-      catList = parsed.categories || []
-      brandList = parsed.brands || []
-      unitList = parsed.units || []
-      whList = parsed.warehouses || []
+        setCategories(catList)
+        setBrands(brandList)
+        setUnits(unitList)
+        setWarehouses(whList)
+      }
 
-      setCategories(catList)
-      setBrands(brandList)
-      setUnits(unitList)
-      setWarehouses(whList)
+      // 2. Fetch Live Catalog View
+      const { data: prodData } = await supabase
+        .from('v_products')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      const catMap = new Map(catList.map((c) => [c.id, c.name]))
+      const brandMap = new Map(brandList.map((b) => [b.id, b.name]))
+      const unitMap = new Map(unitList.map((u) => [u.id, u.code]))
+
+      const enriched = (prodData || []).map((p: any) => ({
+        ...p,
+        category_name: catMap.get(p.category_id) || '—',
+        brand_name: brandMap.get(p.brand_id) || '—',
+        unit_code: unitMap.get(p.unit_id) || '—',
+      }))
+
+      setProducts(enriched)
+    } catch (err) {
+      console.error('Error loading products:', err)
+      setProducts([])
     }
-
-    // 2. Fetch Live Catalog View
-    const { data: prodData } = await supabase
-      .from('v_products')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    const catMap = new Map(catList.map((c) => [c.id, c.name]))
-    const brandMap = new Map(brandList.map((b) => [b.id, b.name]))
-    const unitMap = new Map(unitList.map((u) => [u.id, u.code]))
-
-    const enriched = (prodData || []).map((p) => ({
-      ...p,
-      category_name: catMap.get(p.category_id) || '—',
-      brand_name: brandMap.get(p.brand_id) || '—',
-      unit_code: unitMap.get(p.unit_id) || '—',
-    }))
-
-    setProducts(enriched)
     setLoading(false)
   }
 
@@ -205,10 +209,11 @@ export default function ProductsPage() {
     setIsDeleting(false)
   }
 
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = (products || []).filter((p) => {
+    if (!p) return false
     const matchesSearch =
-      p.product_code.toLowerCase().includes(search.toLowerCase()) ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.product_code || '').toLowerCase().includes(search.toLowerCase()) ||
+      (p.name || '').toLowerCase().includes(search.toLowerCase()) ||
       (p.barcode && p.barcode.includes(search))
 
     const matchesCategory =

@@ -7,7 +7,7 @@ import { formatCurrency, formatQuantity } from '@/lib/utils'
 import { KPICard } from '@/components/dashboard/kpi-card'
 import { RecentOrdersTable } from '@/components/dashboard/recent-orders-table'
 import { 
-  DollarSign, FileText, PackageAlert, ShieldAlert, 
+  DollarSign, FileText, AlertTriangle, ShieldAlert, 
   TrendingUp, ShoppingBag, Award, Flame, RefreshCw, 
   Warehouse, Truck, CheckSquare, Clock, PackageCheck, Coins, ArrowRight, ArrowLeft
 } from 'lucide-react'
@@ -222,7 +222,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <KPICard title={locale === 'ar' ? 'طلبيات بانتظار التجهيز' : 'Orders to Prepare'} value={`${metrics.orders_to_prepare} ${locale === 'ar' ? 'طلبية' : 'orders'}`} icon={Warehouse} colorVariant="indigo" href="/sales/orders" />
             <KPICard title={locale === 'ar' ? 'طلبيات جاهزة للشحن والتسليم' : 'Ready for Delivery'} value={`${metrics.orders_ready} ${locale === 'ar' ? 'شحنة' : 'shipments'}`} icon={Truck} colorVariant="purple" href="/sales/orders" />
-            <KPICard title={locale === 'ar' ? 'أصناف وصلت لحد النواقص' : 'Low Stock SKUs'} value={`${metrics.low_stock_count} ${locale === 'ar' ? 'صنف' : 'items'}`} subtitle={locale === 'ar' ? `${metrics.out_of_stock_count} صنف نافد` : `${metrics.out_of_stock_count} out of stock`} icon={PackageAlert} colorVariant={metrics.out_of_stock_count > 0 ? 'crimson' : 'amber'} href="/inventory/balances" />
+            <KPICard title={locale === 'ar' ? 'أصناف وصلت لحد النواقص' : 'Low Stock SKUs'} value={`${metrics.low_stock_count} ${locale === 'ar' ? 'صنف' : 'items'}`} subtitle={locale === 'ar' ? `${metrics.out_of_stock_count} صنف نافد` : `${metrics.out_of_stock_count} out of stock`} icon={AlertTriangle} colorVariant={metrics.out_of_stock_count > 0 ? 'crimson' : 'amber'} href="/inventory/balances" />
             <KPICard title={locale === 'ar' ? 'شحنات توريد متأخرة' : 'Late Inbound POs'} value={`${metrics.late_po_count} ${locale === 'ar' ? 'شحنة' : 'POs'}`} icon={Clock} colorVariant="crimson" href="/purchasing/orders" />
           </div>
 
@@ -246,7 +246,7 @@ export default function DashboardPage() {
             {/* نواقص المستودع الحرجة (كميات فقط بدون أسعار) */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h2 className="text-sm font-bold text-white flex items-center gap-2"><PackageAlert className="w-4 h-4 text-amber-400" /> {locale === 'ar' ? 'أصناف المستودع الحرجة والنواقص' : 'Critical Stock SKUs'}</h2>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-400" /> {locale === 'ar' ? 'أصناف المستودع الحرجة والنواقص' : 'Critical Stock SKUs'}</h2>
                 <button onClick={() => router.push('/inventory/balances')} className="text-xs text-amber-400 font-semibold">{locale === 'ar' ? 'عرض المخزون' : 'View Stock'}</button>
               </div>
               <div className="divide-y divide-slate-800/60 mt-2">
@@ -268,8 +268,8 @@ export default function DashboardPage() {
       {role === 'PURCHASING' && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPICard title={locale === 'ar' ? 'أصناف تحتاج إعادة طلب' : 'Reorder Needed'} value={`${metrics.low_stock_count} ${locale === 'ar' ? 'صنف' : 'items'}`} icon={PackageAlert} colorVariant="amber" href="/inventory/balances" />
-            <KPICard title={locale === 'ar' ? 'أصناف نفدت بالكامل' : 'Out of Stock SKUs'} value={`${metrics.out_of_stock_count} ${locale === 'ar' ? 'صنف' : 'items'}`} icon={PackageAlert} colorVariant="crimson" href="/inventory/balances" />
+            <KPICard title={locale === 'ar' ? 'أصناف تحتاج إعادة طلب' : 'Reorder Needed'} value={`${metrics.low_stock_count} ${locale === 'ar' ? 'صنف' : 'items'}`} icon={AlertTriangle} colorVariant="amber" href="/inventory/balances" />
+            <KPICard title={locale === 'ar' ? 'أصناف نفدت بالكامل' : 'Out of Stock SKUs'} value={`${metrics.out_of_stock_count} ${locale === 'ar' ? 'صنف' : 'items'}`} icon={AlertTriangle} colorVariant="crimson" href="/inventory/balances" />
             <KPICard title={locale === 'ar' ? 'شحنات متأخرة من الموردين' : 'Late Supplier Deliveries'} value={`${metrics.late_po_count} ${locale === 'ar' ? 'أمر شراء' : 'POs'}`} icon={Clock} colorVariant="crimson" href="/purchasing/orders" />
             <KPICard title={locale === 'ar' ? 'أوامر شراء مفتوحة للتوريد' : 'Open Purchase Orders'} value={`${metrics.open_pos_count} ${locale === 'ar' ? 'أمر توريد' : 'active'}`} icon={Truck} colorVariant="emerald" href="/purchasing/orders" />
           </div>
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             {/* مقترحات إعادة الطلب */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h2 className="text-sm font-bold text-white flex items-center gap-2"><PackageAlert className="w-4 h-4 text-amber-400" /> {locale === 'ar' ? 'مقترحات إعادة الطلب وإصدار أوامر التوريد' : 'Reorder Suggestions'}</h2>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-400" /> {locale === 'ar' ? 'مقترحات إعادة الطلب وإصدار أوامر التوريد' : 'Reorder Suggestions'}</h2>
                 <button onClick={() => router.push('/purchasing/orders')} className="text-xs text-sky-400 font-semibold">{locale === 'ar' ? 'إنشاء أمر شراء' : 'Create PO'}</button>
               </div>
               <div className="divide-y divide-slate-800/60 mt-2">

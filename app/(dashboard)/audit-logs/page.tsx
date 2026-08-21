@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useI18n } from '@/lib/i18n/context'
+import { formatDate } from '@/lib/utils'
 import { 
   History, Search, Filter, RefreshCw, Eye, 
-  ShieldCheck, FileText, Code2, XCircle
+  Code2, XCircle
 } from 'lucide-react'
 
 export default function AuditLogsPage() {
-  const { t, locale } = useI18n()
+  const { locale } = useI18n()
   const supabase = createClient()
 
   const [logs, setLogs] = useState<any[]>([])
@@ -20,11 +21,16 @@ export default function AuditLogsPage() {
 
   async function loadData() {
     setLoading(true)
-    const { data } = await supabase.rpc('rpc_get_audit_logs_feed', {
-      p_action: actionFilter === 'ALL' ? null : actionFilter,
-      p_search: search.trim() || null,
-    } as any)
-    setLogs(data || [])
+    try {
+      const { data } = await (supabase as any).rpc('rpc_get_audit_logs_feed', {
+        p_action: actionFilter === 'ALL' ? null : actionFilter,
+        p_search: search.trim() || null,
+      })
+      setLogs(data || [])
+    } catch (err) {
+      console.error('Error loading audit logs:', err)
+      setLogs([])
+    }
     setLoading(false)
   }
 
@@ -68,7 +74,7 @@ export default function AuditLogsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && loadData()}
-            placeholder={locale === 'ar' ? 'البحث باسم الجدول أو اسم المستخدم...' : 'Search by table name or user...'}
+            placeholder={locale === 'ar' ? 'البحث باسم الجدول أو اسم المستخدم (اضغط Enter)...' : 'Search by table name or user...'}
             className="w-full bg-slate-900/80 border border-slate-800 focus:border-sky-500 rounded-xl px-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-colors"
           />
         </div>
@@ -110,24 +116,24 @@ export default function AuditLogsPage() {
               <tr><td colSpan={5} className="py-8 text-center text-slate-500">{locale === 'ar' ? 'لا توجد سجلات تدقيق مطابقة.' : 'No audit records found.'}</td></tr>
             ) : (
               logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-800/25 transition-colors">
+                <tr key={log?.id} className="hover:bg-slate-800/25 transition-colors">
                   <td className="py-3.5 px-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border font-mono ${actionStyles[log.action] || 'bg-slate-800 text-slate-300'}`}>
-                      {log.action}
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border font-mono ${actionStyles[log?.action] || 'bg-slate-800 text-slate-300'}`}>
+                      {log?.action || 'AUDIT'}
                     </span>
                   </td>
 
                   <td className="py-3.5 px-4 font-mono font-bold text-sky-400">
-                    public.{log.target_table}
+                    public.{log?.target_table || '—'}
                   </td>
 
                   <td className="py-3.5 px-4 text-slate-300">
-                    <span className="font-semibold text-white block">{log.actor_name}</span>
-                    <span className="text-[10px] text-slate-500 font-mono">{log.actor_email || '—'}</span>
+                    <span className="font-semibold text-white block">{log?.actor_name || '—'}</span>
+                    <span className="text-[10px] text-slate-500 font-mono">{log?.actor_email || '—'}</span>
                   </td>
 
                   <td className="py-3.5 px-4 text-center font-mono text-slate-400">
-                    {new Date(log.performed_at).toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                    {formatDate(log?.performed_at)}
                   </td>
 
                   <td className="py-3.5 px-4 text-right rtl:text-left">
