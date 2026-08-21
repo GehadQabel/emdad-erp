@@ -45,15 +45,15 @@ export default function CustomersPage() {
     setLoading(true)
 
     // 1. Fetch User Context
-    const { data: userCtx } = await supabase.rpc('rpc_get_my_profile_and_role')
+    const { data: userCtx } = await (supabase as any).rpc('rpc_get_my_profile_and_role')
     if (userCtx) {
       setCurrentUserRole((userCtx as any).role_code)
     }
 
     // 2. Fetch Customers Overview
-    const { data } = await supabase.rpc('rpc_get_customers_overview', {
+    const { data } = await (supabase as any).rpc('rpc_get_customers_overview', {
       p_search: search.trim() || null,
-    } as any)
+    })
 
     setCustomers(data || [])
     setLoading(false)
