@@ -1,0 +1,136 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "products": "Products",
+    "inventory": "Inventory",
+    "sales": "Sales Orders",
+    "purchasing": "Purchasing",
+    "finance": "Finance",
+    "customers": "Customers",
+    "suppliers": "Suppliers",
+    "approvals": "Approvals",
+    "auditLogs": "Audit Logs",
+    "settings": "Settings",
+    "logout": "Sign Out"
+  },
+  "auth": {
+    "title": "EMDAD ERP Platform",
+    "subtitle": "Food Products Distribution & Supply Chain System",
+    "email": "Email Address",
+    "password": "Password",
+    "signIn": "Sign In",
+    "authenticating": "Authenticating...",
+    "securityBadge": "PostgreSQL Row Level Security Active"
+  },
+  "dashboard": {
+    "title": "Operations Overview",
+    "subtitle": "Real-time key performance metrics from Supabase PostgreSQL",
+    "kpi": {
+      "todayRevenue": "Today's Delivered Sales",
+      "openReceivables": "Outstanding Receivables",
+      "lowStock": "Low Stock Alerts",
+      "blockedAccounts": "Blocked Customer Accounts"
+    },
+    "recentOrders": {
+      "title": "Recent Sales Orders",
+      "subtitle": "Live feed of latest customer order commitments",
+      "empty": "No sales orders recorded in database",
+      "orderNumber": "Order #",
+      "date": "Date",
+      "total": "Total Amount",
+      "status": "Fulfillment Status"
+    }
+  },
+  "inventory": {
+    "balances": {
+      "title": "Real-Time Inventory Balances",
+      "subtitle": "Central ledger truth: Physical On Hand, Reserved Commitments, and Available for Sale",
+      "searchPlaceholder": "Search by SKU, Product Name, or Barcode (Press Enter)...",
+      "allWarehouses": "All Warehouses",
+      "skuProduct": "SKU / Product",
+      "warehouse": "Warehouse",
+      "onHand": "On Hand (Physical)",
+      "reserved": "Reserved (Sales)",
+      "available": "Available for Sale",
+      "minThreshold": "Min Stock Alert Level",
+      "stockCondition": "Stock Condition",
+      "safeStock": "Safe Stock",
+      "lowStock": "Low Stock / Reorder Needed",
+      "outOfStock": "Out of Stock",
+      "loading": "Loading live stock balances from database...",
+      "empty": "No inventory records found."
+    }
+  },
+  "sales": {
+    "orders": {
+      "title": "Sales Orders & Commercial Orders",
+      "subtitle": "Supermarket orders, stock reservations, credit control, and delivery dispatching",
+      "newOrder": "Create Sales Order",
+      "searchPlaceholder": "Search by Order #, Customer Name, or Code...",
+      "filterStatus": "All Statuses",
+      "statuses": {
+        "ALL": "All Statuses",
+        "DRAFT": "Draft",
+        "PENDING_APPROVAL": "Pending Approval",
+        "APPROVED": "Approved & Reserved",
+        "PREPARING": "Preparing in Warehouse",
+        "READY_FOR_DELIVERY": "Ready for Delivery",
+        "DELIVERED": "Delivered & Invoiced",
+        "CANCELLED": "Cancelled"
+      },
+      "table": {
+        "orderNumber": "Order #",
+        "customer": "Customer & Location",
+        "warehouse": "Fulfilling Warehouse",
+        "items": "Items",
+        "total": "Total Amount",
+        "paymentType": "Terms",
+        "status": "Order Status",
+        "actions": "Actions"
+      },
+      "paymentTypes": {
+        "CREDIT": "Credit (Net Terms)",
+        "CASH": "Cash (Immediate)"
+      },
+      "modal": {
+        "title": "New Supermarket Sales Order",
+        "customer": "Supermarket Customer *",
+        "location": "Delivery Branch / Location *",
+        "warehouse": "Fulfilling Warehouse *",
+        "paymentType": "Payment Terms *",
+        "orderDiscount": "Order-Level Discount (%)",
+        "addItem": "Add Product Line",
+        "product": "Product Item",
+        "unitPrice": "Unit Price (EGP)",
+        "quantity": "Quantity",
+        "lineDiscount": "Line Disc %",
+        "lineTotal": "Line Total",
+        "subtotal": "Subtotal:",
+        "discount": "Discount:",
+        "finalTotal": "Final Total Amount:",
+        "submit": "Confirm & Submit Order",
+        "cancel": "Cancel",
+        "blockedCustomerWarning": "This customer account is currently BLOCKED by credit risk policy."
+      },
+      "actions": {
+        "approve": "Approve",
+        "prepare": "Prepare",
+        "ready": "Ready",
+        "deliver": "Deliver & Invoice",
+        "cancelOrder": "Cancel"
+      }
+    }
+  },
+  "notifications": {
+    "title": "Operational Alerts",
+    "unread": "unread",
+    "empty": "No unread notifications"
+  },
+  "common": {
+    "loading": "Loading live data...",
+    "error": "Failed to load data",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "currency": "EGP"
+  }
+}
