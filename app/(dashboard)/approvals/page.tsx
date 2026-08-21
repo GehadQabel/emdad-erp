@@ -22,10 +22,10 @@ export default function ApprovalsPage() {
 
   async function loadData() {
     setLoading(true)
-    const { data } = await supabase.rpc('rpc_get_approvals_feed', {
+    const { data } = await (supabase as any).rpc('rpc_get_approvals_feed', {
       p_status: statusFilter === 'ALL' ? null : statusFilter,
       p_search: search.trim() || null,
-    } as any)
+    })
     setApprovals(data || [])
     setLoading(false)
   }
